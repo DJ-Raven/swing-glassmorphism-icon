@@ -51,9 +51,7 @@ public class GlassIcon implements Icon, Serializable {
     private Image imageRender;
 
     public GlassIcon() {
-        this(new GlassIconConfig("/test/icon2.svg", 5, 0, 5,
-                null,
-                new GlassIconConfig.GlassShape(new Color(28, 153, 84), new java.awt.geom.RoundRectangle2D.Double(2, 2, 10, 10, 3, 3), 45)));
+        this(new GlassIconConfig());
     }
 
     public GlassIcon(GlassIconConfig glassIconConfig) {
@@ -64,7 +62,7 @@ public class GlassIcon implements Icon, Serializable {
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         updateImage(c);
-        if (glassIconConfig.getScale() > 0 && imageRender != null) {
+        if (glassIconConfig != null && glassIconConfig.getScale() > 0 && imageRender != null) {
             g.drawImage(imageRender, x, y, null);
         }
     }
@@ -84,7 +82,7 @@ public class GlassIcon implements Icon, Serializable {
             component = c;
         }
         try {
-            if (diagram != null && (imageRender == null || glassIconConfig.getGlassIndex() != oldGlassIndex || glassIconConfig.getBlur() != oldBlur || diagram != oldDiagram || glassIconConfig.getScale() != oldScale || glassIconConfig.getColorMap() != oldColorMap || glassIconConfig.getGlassShape() != oldGlassShape || (useComponentColor && (!c.getBackground().equals(oldBackground) || !c.getForeground().equals(oldForeground))))) {
+            if (glassIconConfig != null && diagram != null && (imageRender == null || glassIconConfig.getGlassIndex() != oldGlassIndex || glassIconConfig.getBlur() != oldBlur || diagram != oldDiagram || glassIconConfig.getScale() != oldScale || glassIconConfig.getColorMap() != oldColorMap || glassIconConfig.getGlassShape() != oldGlassShape || (useComponentColor && (!c.getBackground().equals(oldBackground) || !c.getForeground().equals(oldForeground))))) {
                 if (glassIconConfig.getScale() > 0 && iconWidth > 0 && iconHeight > 0) {
                     BufferedImage buff = new BufferedImage(iconWidth, iconHeight, BufferedImage.TYPE_INT_ARGB);
                     Graphics2D g2 = buff.createGraphics();
@@ -122,6 +120,9 @@ public class GlassIcon implements Icon, Serializable {
         if (diagram != null) {
             iconWidth = (int) (diagram.getWidth() * glassIconConfig.getScale());
             iconHeight = (int) (diagram.getHeight() * glassIconConfig.getScale());
+        } else {
+            iconWidth = 0;
+            iconHeight = 0;
         }
         if (component != null) {
             component.revalidate();

@@ -2,6 +2,7 @@ package raven.glassmorphism;
 
 import java.awt.Color;
 import java.awt.Shape;
+import java.awt.geom.RoundRectangle2D;
 import java.io.Serializable;
 import java.util.Map;
 
@@ -69,6 +70,7 @@ public class GlassIconConfig implements Serializable {
     }
 
     public GlassIconConfig() {
+        this(null, 3, 0, 5, null, new GlassShape(Color.decode("#0CA064"), new RoundRectangle2D.Double(2, 2, 10, 10, 5, 5), 45f));
     }
 
     private String name;
