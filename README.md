@@ -1,4 +1,4 @@
-# swing-glassmorphism-icon
+# Swing Glassmorphism Icon
 
 This icon custom with svg file to make java swing application ui look good.
 
