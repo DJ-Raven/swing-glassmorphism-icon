@@ -1,6 +1,18 @@
 # Swing Glassmorphism Icon
 
-This icon custom with svg file to make java swing application ui look good.
+This project showcases the customization of glassmorphism icons using Java Swing and the `javax.swing.Icon` class, along with the svgSalamander library for SVG icons and common image manipulation techniques to create blur effects.
+
+## Overview
+
+Glassmorphism is a modern design trend that creates a glass-like effect on user interface elements. This project aims to demonstrate how to implement glassmorphism icons in Java Swing applications, providing a visually appealing and modern user interface.
+
+## Features
+
+- Customization of glassmorphism icons using Java Swing and the `javax.swing.Icon` class.
+- Integration with the svgSalamander library for seamless handling of SVG icons.
+- Implementation of common image manipulation techniques to create blur effects for glassmorphism icons.
+
+## Screenshot
 
 <img src="https://github.com/DJ-Raven/swing-glassmorphism-icon/assets/58245926/64aa3317-3ef1-4da9-8839-4b1746917dd7" alt="sample light" width="350"/>
 <img src="https://github.com/DJ-Raven/swing-glassmorphism-icon/assets/58245926/f2eefb7b-021f-4e8c-8293-03f9ea5d4946" alt="sample dark" width="350"/>
