@@ -22,9 +22,11 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.Serializable;
 import java.net.URI;
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import javax.swing.Icon;
+import javax.swing.UIManager;
 
 /**
  *
@@ -36,12 +38,13 @@ public class GlassIcon implements Icon, Serializable {
     private SVGDiagram diagram;
     private GlassIconConfig glassIconConfig;
 
-    private int iconWidth;
-    private int iconHeight;
+    private float iconWidth;
+    private float iconHeight;
     private SVGDiagram oldDiagram;
     private float oldScale;
     private int oldGlassIndex;
     private float oldBlur;
+    private float oldScaleFactor;
     private GlassIconConfig.GlassShape oldGlassShape;
     private Map<Integer, String> oldColorMap;
     private Component component;
@@ -69,12 +72,16 @@ public class GlassIcon implements Icon, Serializable {
 
     @Override
     public int getIconWidth() {
-        return iconWidth;
+        return scaleSize(iconWidth);
     }
 
     @Override
     public int getIconHeight() {
-        return iconHeight;
+        return scaleSize(iconHeight);
+    }
+
+    public int scaleSize(float size) {
+        return (int) (size * (glassIconConfig.getScale() * getLafScale()));
     }
 
     private void updateImage(Component c) {
@@ -82,13 +89,15 @@ public class GlassIcon implements Icon, Serializable {
             component = c;
         }
         try {
-            if (glassIconConfig != null && diagram != null && (imageRender == null || glassIconConfig.getGlassIndex() != oldGlassIndex || glassIconConfig.getBlur() != oldBlur || diagram != oldDiagram || glassIconConfig.getScale() != oldScale || glassIconConfig.getColorMap() != oldColorMap || glassIconConfig.getGlassShape() != oldGlassShape || (useComponentColor && (!c.getBackground().equals(oldBackground) || !c.getForeground().equals(oldForeground))))) {
+            float scale = getLafScale();
+            if (glassIconConfig != null && diagram != null && (scale != oldScaleFactor || imageRender == null || glassIconConfig.getGlassIndex() != oldGlassIndex || glassIconConfig.getBlur() != oldBlur || diagram != oldDiagram || glassIconConfig.getScale() != oldScale || glassIconConfig.getColorMap() != oldColorMap || glassIconConfig.getGlassShape() != oldGlassShape || (useComponentColor && (!c.getBackground().equals(oldBackground) || !c.getForeground().equals(oldForeground))))) {
                 if (glassIconConfig.getScale() > 0 && iconWidth > 0 && iconHeight > 0) {
-                    BufferedImage buff = new BufferedImage(iconWidth, iconHeight, BufferedImage.TYPE_INT_ARGB);
+                    float s = scale * glassIconConfig.getScale();
+                    BufferedImage buff = new BufferedImage((int) (iconWidth * s), (int) (iconHeight * s), BufferedImage.TYPE_INT_ARGB);
                     Graphics2D g2 = buff.createGraphics();
                     installRenderingHin(g2);
                     diagram.setIgnoringClipHeuristic(true);
-                    renderElement(g2);
+                    renderElement(g2, scale * glassIconConfig.getScale());
                     oldDiagram = diagram;
                     oldGlassIndex = glassIconConfig.getGlassIndex();
                     oldBlur = glassIconConfig.getBlur();
@@ -98,7 +107,9 @@ public class GlassIcon implements Icon, Serializable {
                     imageRender = buff;
                     oldBackground = c.getBackground();
                     oldForeground = c.getForeground();
+                    oldScaleFactor = scale;
                     g2.dispose();
+                    System.out.println("Created Image");
                 }
             }
         } catch (SVGException e) {
@@ -108,7 +119,12 @@ public class GlassIcon implements Icon, Serializable {
 
     private void initDiagram() {
         if (glassIconConfig.getName() != null) {
-            diagram = loadSvg(svgUniverse.loadSVG(getClass().getResource(glassIconConfig.getName())));
+            URL url = getClass().getResource(glassIconConfig.getName());
+            if (url != null) {
+                diagram = loadSvg(svgUniverse.loadSVG(url));
+            } else {
+                diagram = null;
+            }
         } else {
             diagram = null;
             imageRender = null;
@@ -118,8 +134,8 @@ public class GlassIcon implements Icon, Serializable {
 
     private void initSize() {
         if (diagram != null) {
-            iconWidth = (int) (diagram.getWidth() * glassIconConfig.getScale());
-            iconHeight = (int) (diagram.getHeight() * glassIconConfig.getScale());
+            iconWidth = diagram.getWidth();
+            iconHeight = diagram.getHeight();
         } else {
             iconWidth = 0;
             iconHeight = 0;
@@ -129,16 +145,15 @@ public class GlassIcon implements Icon, Serializable {
         }
     }
 
-    private void renderElement(Graphics2D g2) throws SVGException {
+    private void renderElement(Graphics2D g2, float scale) throws SVGException {
         List<SVGElement> list = diagram.getRoot().getChildren(null);
         useComponentColor = false;
-        createGlass(g2, list, glassIconConfig.getGlassIndex());
+        createGlass(g2, list, scale, glassIconConfig.getGlassIndex());
         int i = -1;
         for (SVGElement e : list) {
             i++;
             if (e instanceof RenderableElement) {
                 RenderableElement r = (RenderableElement) e;
-                float scale = glassIconConfig.getScale();
                 if (i != glassIconConfig.getGlassIndex()) {
                     AffineTransform oldTran = g2.getTransform();
                     g2.scale(scale, scale);
@@ -153,12 +168,11 @@ public class GlassIcon implements Icon, Serializable {
         }
     }
 
-    private void createGlass(Graphics2D g2, List<SVGElement> list, int index) throws SVGException {
+    private void createGlass(Graphics2D g2, List<SVGElement> list, float scale, int index) throws SVGException {
         int i = -1;
         for (SVGElement e : list) {
             i++;
             if (e instanceof RenderableElement) {
-                float scale = glassIconConfig.getScale();
                 if (i == glassIconConfig.getGlassIndex()) {
                     ShapeElement sh = (ShapeElement) e;
                     Rectangle rec = sh.getBoundingBox().getBounds();
@@ -174,15 +188,14 @@ public class GlassIcon implements Icon, Serializable {
                         e.getStyle(attrib);
                         mapColor = attrib.getStringValue();
                     }
-                    g2.drawImage(createBlurImage(sh.getShape(), rec, Color.decode(mapColor)), x, y, null);
+                    g2.drawImage(createBlurImage(sh.getShape(), rec, Color.decode(mapColor), scale), x, y, null);
                     return;
                 }
             }
         }
     }
 
-    private Image createBlurImage(Shape shape, Rectangle rec, Color color) throws SVGException {
-        float scale = glassIconConfig.getScale();
+    private Image createBlurImage(Shape shape, Rectangle rec, Color color, float scale) throws SVGException {
         int w = (int) (rec.width * scale);
         int h = (int) (rec.height * scale);
         BufferedImage blurImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
@@ -194,18 +207,17 @@ public class GlassIcon implements Icon, Serializable {
         g2.fill(shape);
         g2.setTransform(oldTran);
         g2.setComposite(AlphaComposite.SrcIn);
-        g2.drawImage(ImageUtil.blur(createImage(rec, color), calculateBlur()), 0, 0, null);
+        int blurScale = (int) calculateBlur(scale);
+        g2.drawImage(ImageUtil.blur(createImage(rec, color, scale, blurScale), blurScale), 0, 0, null);
         g2.dispose();
         return blurImage;
     }
 
-    private BufferedImage createImage(Rectangle rec, Color color) throws SVGException {
-        int b = (int) calculateBlur();
-        float scale = glassIconConfig.getScale();
-        Rectangle recBlur = new Rectangle(rec.x - b, rec.y - b, rec.width + b * 2, rec.height + b * 2);
+    private BufferedImage createImage(Rectangle rec, Color color, float scale, int blurScale) throws SVGException {
+        Rectangle recBlur = new Rectangle(rec.x - blurScale, rec.y - blurScale, rec.width + blurScale * 2, rec.height + blurScale * 2);
         int w = (int) (rec.width * scale);
         int h = (int) (rec.height * scale);
-        BufferedImage img = new BufferedImage(w + b, h + b, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage img = new BufferedImage(w + blurScale, h + blurScale, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2 = img.createGraphics();
         installRenderingHin(g2);
         g2.scale(scale, scale);
@@ -226,14 +238,22 @@ public class GlassIcon implements Icon, Serializable {
         g2.fill(glassIconConfig.getGlassShape().getShape());
     }
 
+    private float getLafScale() {
+        Object scale = UIManager.get("laf.scaleFactor");
+        if (scale != null) {
+            return Float.parseFloat(scale.toString());
+        }
+        return 1f;
+    }
+
     private synchronized SVGDiagram loadSvg(URI uri) {
         svgUniverse.removeDocument(uri);
         SVGDiagram dg = svgUniverse.getDiagram(uri);
         return dg;
     }
 
-    private float calculateBlur() {
-        return glassIconConfig.getBlur() * glassIconConfig.getScale();
+    private float calculateBlur(float scale) {
+        return glassIconConfig.getBlur() * scale;
     }
 
     private void installRenderingHin(Graphics2D g2) {

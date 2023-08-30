@@ -70,7 +70,7 @@ public class GlassIconConfig implements Serializable {
     }
 
     public GlassIconConfig() {
-        this(null, 3, 0, 5, null, new GlassShape(Color.decode("#0CA064"), new RoundRectangle2D.Double(2, 2, 10, 10, 5, 5), 45f));
+        this(null, 3f, 0, 5, null, new GlassShape(Color.decode("#0CA064"), new RoundRectangle2D.Double(2, 2, 10, 10, 5, 5), 45f));
     }
 
     private String name;
