@@ -49,3 +49,5 @@ glassIcon.setGlassIconConfig(new GlassIconConfig("/glassicon/icon.svg", 5f, 0, 5
         new GlassIconConfig.GlassShape(Color.decode("#e7e510"), new RoundRectangle2D.Double(2, 2, 10, 10, 5, 5), 45)
 ));
 ```
+## Update Note
+- `vs 1.0.1` use `laf.scaleFactor` support flatlaf scale ui
