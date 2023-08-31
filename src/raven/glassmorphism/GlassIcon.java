@@ -109,7 +109,6 @@ public class GlassIcon implements Icon, Serializable {
                     oldForeground = c.getForeground();
                     oldScaleFactor = scale;
                     g2.dispose();
-                    System.out.println("Created Image");
                 }
             }
         } catch (SVGException e) {
